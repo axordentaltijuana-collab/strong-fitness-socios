@@ -53,7 +53,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
     <section id="qrsec" class="sec"></section>
     <section id="history" class="sec"></section>
 
-<section id="tab-routine" class="sec">
+<section id="routine" class="sec">
   <div class="card">
     <h2>Mi rutina</h2>
     <p class="muted">Rutinas e indicaciones asignadas por tu entrenador.</p>
@@ -239,6 +239,8 @@ async function getOwnMember(){
 }
 async function loadMemberTraining(){
   const box=document.getElementById('memberRoutineList');
+  if(!box) return;
+  box.innerHTML='<p class="muted">Cargando rutina...</p>';
   try{
     const m=await getOwnMember(); if(!m){box.innerHTML='No se encontró tu perfil.';return;}
     const routines=await restGet('workout_routines?member_id=eq.'+m.id+'&is_active=eq.true&select=*&order=created_at.desc');
@@ -260,7 +262,7 @@ async function loadMemberTraining(){
     document.getElementById('memberNoteList').innerHTML=notes.map(n=>`<div class="exercise">${memberEsc(n.note)}</div>`).join('')||'<p class="muted">Sin notas.</p>';
     const files=await restGet('member_files?member_id=eq.'+m.id+'&visible_to_member=eq.true&select=*&order=created_at.desc');
     document.getElementById('memberFileList').innerHTML=files.map(f=>`<div class="exercise"><b>${memberEsc(f.title||'Archivo')}</b><div class="muted">${memberEsc(f.description||'')}</div><button onclick="openMemberFile('${memberEsc(f.file_path)}')">Abrir</button></div>`).join('')||'<p class="muted">Sin archivos.</p>';
-  }catch(e){ box.innerHTML='<p>No se pudo cargar la rutina.</p>'; }
+  }catch(e){ console.error(e); box.innerHTML='<p>No se pudo cargar la rutina.</p><p class="muted">'+memberEsc(e.message||'Error de conexión')+'</p>'; }
 }
 async function openMemberFile(path){
   try{
