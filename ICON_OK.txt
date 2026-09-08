@@ -1,0 +1,1 @@
+Si puedes abrir /apple-touch-icon.png en el navegador, el icono está publicado correctamente.
