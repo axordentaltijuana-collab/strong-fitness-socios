@@ -24,6 +24,22 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
 .nav{position:fixed;bottom:0;left:0;right:0;background:#090d0a;border-top:1px solid var(--b);display:none;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 .navin{width:min(520px,100%);display:grid;grid-template-columns:repeat(5,1fr)}.nav button{background:transparent;color:#fff;border:0;margin:0;font-size:11px;padding:9px 2px}.nav button.on{color:var(--g)}
 .msg{margin-top:10px;min-height:20px}
+
+/* V14 - Progreso profesional */
+.progress-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.metric-card{background:#0b130e;border:1px solid #24372a;border-radius:16px;padding:14px}
+.metric-card .label{color:#9fb6a6;font-size:12px;margin-bottom:6px}
+.metric-card .value{font-size:22px;font-weight:900;color:#fff}
+.metric-card .unit{font-size:12px;color:#9fb6a6;margin-left:4px}
+.progress-table-wrap{overflow-x:auto;border:1px solid #24372a;border-radius:16px;margin-top:14px}
+.progress-table{width:100%;border-collapse:collapse;min-width:720px;background:#08100b}
+.progress-table th,.progress-table td{padding:12px 10px;border-bottom:1px solid #1d3023;text-align:left}
+.progress-table th{color:#5cff25;font-size:12px;text-transform:uppercase;letter-spacing:.04em;background:#0c1710}
+.progress-table td{color:#fff;font-size:13px}
+.progress-note{background:#0b130e;border:1px solid #24372a;border-radius:16px;padding:14px;margin-top:14px}
+.progress-note h3{margin:0 0 8px}
+@media(max-width:600px){.progress-grid{grid-template-columns:1fr 1fr}.metric-card .value{font-size:18px}}
+
 </style>
 
 
@@ -70,11 +86,36 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
 </section>
 
 <section id="progress" class="sec">
-  <div class="sectionHead"><h2>📈 Mi progreso</h2></div>
-  <div class="card">
-    <h2>Mi progreso</h2>
-    <p class="muted">Tus registros de peso y medidas.</p>
-    <div id="memberProgressList">Cargando...</div>
+  <div class="sectionHead">
+    <h2>📈 Mi progreso</h2>
+    <p class="muted">Seguimiento de composición corporal y objetivos.</p>
+  </div>
+
+  <div id="progressSummary" class="progress-grid">
+    <div class="metric-card"><div class="label">Peso actual</div><div class="value" id="pgWeight">—</div></div>
+    <div class="metric-card"><div class="label">Estatura</div><div class="value" id="pgHeight">—</div></div>
+    <div class="metric-card"><div class="label">IMC</div><div class="value" id="pgBMI">—</div></div>
+    <div class="metric-card"><div class="label">Peso meta</div><div class="value" id="pgGoal">—</div></div>
+    <div class="metric-card"><div class="label">Peso ideal estimado</div><div class="value" id="pgIdeal">—</div></div>
+    <div class="metric-card"><div class="label">% grasa corporal</div><div class="value" id="pgFat">—</div></div>
+  </div>
+
+  <h3>Mediciones corporales</h3>
+  <div class="progress-table-wrap">
+    <table class="progress-table">
+      <thead><tr>
+        <th>Fecha</th><th>Peso</th><th>IMC</th><th>% grasa</th>
+        <th>Cintura</th><th>Pecho</th><th>Brazo</th><th>Pierna</th>
+      </tr></thead>
+      <tbody id="progressRows">
+        <tr><td colspan="8" class="muted">Todavía no hay mediciones registradas.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="progress-note">
+    <h3>🎯 Objetivo</h3>
+    <div id="progressGoalText" class="muted">El administrador podrá registrar aquí la meta y observaciones del socio.</div>
   </div>
 </section>
   </div>
@@ -209,6 +250,43 @@ $$('.nav button').forEach(b=>b.addEventListener('click',()=>{
 
 const saved = localStorage.getItem('sft_token');
 if(saved) { accessToken=saved; loadMember(); }
+
+function numOrDash(v, unit=''){
+  if(v===null || v===undefined || v==='') return '—';
+  return memberEsc(String(v)) + (unit ? '<span class="unit">'+unit+'</span>' : '');
+}
+function renderProfessionalProgress(rows){
+  rows = Array.isArray(rows) ? rows : [];
+  const latest = rows.length ? rows[0] : {};
+  const w = Number(latest.weight_kg ?? latest.weight ?? 0);
+  const hRaw = Number(latest.height_cm ?? latest.height ?? 0);
+  const hM = hRaw > 3 ? hRaw/100 : hRaw;
+  const bmi = Number(latest.bmi ?? ((w && hM) ? w/(hM*hM) : 0));
+  document.getElementById('pgWeight').innerHTML=numOrDash(w||'', 'kg');
+  document.getElementById('pgHeight').innerHTML=numOrDash(hRaw||'', hRaw ? (hRaw>3?'cm':'m') : '');
+  document.getElementById('pgBMI').innerHTML=numOrDash(bmi ? bmi.toFixed(1) : '');
+  document.getElementById('pgGoal').innerHTML=numOrDash(latest.goal_weight_kg ?? latest.goal_weight ?? '', 'kg');
+  document.getElementById('pgIdeal').innerHTML=numOrDash(latest.ideal_weight_kg ?? latest.ideal_weight ?? '', 'kg');
+  document.getElementById('pgFat').innerHTML=numOrDash(latest.body_fat_pct ?? latest.body_fat ?? '', '%');
+  const body=document.getElementById('progressRows');
+  if(!rows.length){
+    body.innerHTML='<tr><td colspan="8" class="muted">Todavía no hay mediciones registradas.</td></tr>';
+  }else{
+    body.innerHTML=rows.map(r=>'<tr>'+
+      '<td>'+memberEsc(String(r.measured_at ?? r.date ?? r.created_at ?? '—').slice(0,10))+'</td>'+
+      '<td>'+memberEsc(String(r.weight_kg ?? r.weight ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.bmi ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.body_fat_pct ?? r.body_fat ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.waist_cm ?? r.waist ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.chest_cm ?? r.chest ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.arm_cm ?? r.arm ?? '—'))+'</td>'+
+      '<td>'+memberEsc(String(r.leg_cm ?? r.leg ?? '—'))+'</td>'+
+    '</tr>').join('');
+  }
+  document.getElementById('progressGoalText').textContent =
+    latest.goal_notes ?? latest.notes ?? 'El administrador podrá registrar aquí la meta y observaciones del socio.';
+}
+
 </script>
 
 <style>
