@@ -22,7 +22,7 @@ button:disabled{opacity:.6}
 table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px solid var(--b);font-size:13px;text-align:left}th{color:var(--m)}
 .sec{display:none}.sec.on{display:block}
 .nav{position:fixed;bottom:0;left:0;right:0;background:#090d0a;border-top:1px solid var(--b);display:none;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
-.navin{width:min(520px,100%);display:grid;grid-template-columns:repeat(3,1fr)}.nav button{background:transparent;color:#fff;border:0;margin:0;font-size:13px}.nav button.on{color:var(--g)}
+.navin{width:min(520px,100%);display:grid;grid-template-columns:repeat(5,1fr)}.nav button{background:transparent;color:#fff;border:0;margin:0;font-size:11px;padding:9px 2px}.nav button.on{color:var(--g)}
 .msg{margin-top:10px;min-height:20px}
 </style>
 
@@ -52,17 +52,8 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
     <section id="home" class="sec on"></section>
     <section id="qrsec" class="sec"></section>
     <section id="history" class="sec"></section>
-  </div>
-</div>
 
-<div id="nav" class="nav"><div class="navin">
-  <button class="on" data-s="home">🏠<br>Inicio</button>
-  <button data-s="qrsec">▦<br>Mi QR</button>
-  <button data-s="history">📋<br>Historial</button>
-</div></div>
-
-
-<section id="tab-routine" class="tabpage" style="display:none">
+<section id="tab-routine" class="sec">
   <div class="card">
     <h2>Mi rutina</h2>
     <p class="muted">Rutinas e indicaciones asignadas por tu entrenador.</p>
@@ -78,13 +69,24 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
   </div>
 </section>
 
-<section id="tab-progress" class="tabpage" style="display:none">
+<section id="progress" class="sec">
   <div class="card">
     <h2>Mi progreso</h2>
     <p class="muted">Tus registros de peso y medidas.</p>
     <div id="memberProgressList">Cargando...</div>
   </div>
 </section>
+  </div>
+</div>
+
+<div id="nav" class="nav"><div class="navin">
+  <button class="on" data-s="home">🏠<br>Inicio</button>
+  <button data-s="routine">🏋️<br>Mi rutina</button>
+  <button data-s="progress">📈<br>Progreso</button>
+  <button data-s="qrsec">▦<br>Mi QR</button>
+  <button data-s="history">📋<br>Historial</button>
+</div></div>
+
 <script>
 const SUPABASE_URL = 'https://wigtjmsuhkrifmfrfohq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_6EFI44BiezDKKNVAkkmfqw_0e4aOJ64';
@@ -198,6 +200,8 @@ $$('.nav button').forEach(b=>b.addEventListener('click',()=>{
   $$('.sec').forEach(x=>x.classList.remove('on'));
   $('#'+b.dataset.s).classList.add('on');
   $$('.nav button').forEach(x=>x.classList.toggle('on',x===b));
+  if(b.dataset.s==='routine') loadMemberTraining();
+  if(b.dataset.s==='progress') loadMemberProgress();
 }));
 
 const saved = localStorage.getItem('sft_token');
@@ -209,23 +213,11 @@ if(saved) { accessToken=saved; loadMember(); }
 .exercise{border-top:1px solid #25402d;padding:12px 0;line-height:1.5}
 </style>
 <script>
-const _oldShowTab = window.showTab;
-window.showTab = function(name){
-  document.querySelectorAll('.tabpage').forEach(x=>x.style.display='none');
-  const target=document.getElementById('tab-'+name);
-  if(target) target.style.display='block';
-  if(typeof _oldShowTab==='function' && !['routine','progress'].includes(name)){
-    try{ _oldShowTab(name); }catch(e){}
-  }
-  if(name==='routine') loadMemberTraining();
-  if(name==='progress') loadMemberProgress();
-};
-
 function memberEsc(v){
   return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function authHeaders(){
-  const token=localStorage.getItem('sft_member_token') || localStorage.getItem('sft_token') || localStorage.getItem('access_token');
+  const token=accessToken || localStorage.getItem('sft_token');
   return {apikey:SUPABASE_KEY,Authorization:'Bearer '+token};
 }
 async function restGet(path){
@@ -234,7 +226,7 @@ async function restGet(path){
   return await r.json();
 }
 async function getOwnMember(){
-  const token=localStorage.getItem('sft_member_token') || localStorage.getItem('sft_token') || localStorage.getItem('access_token');
+  const token=accessToken || localStorage.getItem('sft_token');
   if(!token) return null;
   const ur=await fetch(SUPABASE_URL+'/auth/v1/user',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+token}});
   if(!ur.ok) return null;
