@@ -20,18 +20,18 @@ input{background:#0a0f0b;color:#fff}button{background:var(--g);color:#071007;fon
 button:disabled{opacity:.6}
 .qr{width:210px;height:210px;background:#fff;border-radius:15px;padding:10px;margin:15px auto}.qr img{width:100%;height:100%}
 table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px solid var(--b);font-size:13px;text-align:left}th{color:var(--m)}
-.sec{display:none}.sec.on{display:block}
+.sec{display:none!important}.sec.on{display:block!important}
 .nav{position:fixed;bottom:0;left:0;right:0;background:#090d0a;border-top:1px solid var(--b);display:none;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 .navin{width:min(520px,100%);display:grid;grid-template-columns:repeat(5,1fr)}.nav button{background:transparent;color:#fff;border:0;margin:0;font-size:11px;padding:9px 2px}.nav button.on{color:var(--g)}
 .msg{margin-top:10px;min-height:20px}
 </style>
 
 
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20260908b">
-<link rel="apple-touch-icon-precomposed" sizes="180x180" href="/apple-touch-icon-precomposed.png?v=20260908b">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=20260908b">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png?v=20260908b">
-<link rel="manifest" href="/manifest.webmanifest?v=20260908b">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20260908c">
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="./apple-touch-icon-precomposed.png?v=20260908c">
+<link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=20260908c">
+<link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=20260908c">
+<link rel="manifest" href="./manifest.webmanifest?v=20260908c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Strong Fitness">
@@ -70,6 +70,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
 </section>
 
 <section id="progress" class="sec">
+  <div class="sectionHead"><h2>📈 Mi progreso</h2></div>
   <div class="card">
     <h2>Mi progreso</h2>
     <p class="muted">Tus registros de peso y medidas.</p>
@@ -198,8 +199,10 @@ $('#loginBtn').addEventListener('click', login);
 $('#password').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
 $$('.nav button').forEach(b=>b.addEventListener('click',()=>{
   $$('.sec').forEach(x=>x.classList.remove('on'));
-  $('#'+b.dataset.s).classList.add('on');
+  const target = document.getElementById(b.dataset.s);
+  if(target) target.classList.add('on');
   $$('.nav button').forEach(x=>x.classList.toggle('on',x===b));
+  window.scrollTo(0,0);
   if(b.dataset.s==='routine') loadMemberTraining();
   if(b.dataset.s==='progress') loadMemberProgress();
 }));
