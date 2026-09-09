@@ -79,7 +79,17 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
     <section id="home" class="sec on"></section>
     <section id="qrsec" class="sec"></section>
     <section id="history" class="sec"></section>
+<section id="wod" class="sec">
+  <div class="card">
+    <h2>🔥 WOD de hoy</h2>
+    <div id="wodToday" class="muted">Cargando WOD...</div>
+  </div>
 
+  <div class="card">
+    <h2>📅 WOD de la semana</h2>
+    <div id="wodWeek">Cargando...</div>
+  </div>
+</section>
 <section id="routine" class="sec">
   <div class="card">
     <h2>Mi rutina</h2>
@@ -151,6 +161,7 @@ table{width:100%;border-collapse:collapse}td,th{padding:10px 4px;border-top:1px 
 
 <div id="nav" class="nav"><div class="navin">
   <button class="on" data-s="home">🏠<br>Inicio</button>
+  <button data-s="wod">🔥<br>WOD</button>
   <button data-s="routine">🏋️<br>Mi rutina</button>
   <button data-s="progress">📈<br>Progreso</button>
   <button data-s="qrsec">▦<br>Mi QR</button>
@@ -403,6 +414,85 @@ function renderGoalProgress(rows){
 }
 
 </script>
+  // ===== WOD PARA SOCIOS =====
+function wodDateISO(d = new Date()){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function wodEscape(v=''){
+  return String(v)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
+function wodMonday(dateValue){
+  const d = new Date(dateValue + 'T12:00:00');
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1-day));
+  return d;
+}
+
+async function loadMemberWods(){
+  const todayBox = document.getElementById('wodToday');
+  const weekBox = document.getElementById('wodWeek');
+  if(!todayBox || !weekBox) return;
+
+  todayBox.innerHTML = 'Cargando WOD...';
+  weekBox.innerHTML = 'Cargando...';
+
+  try{
+    const today = wodDateISO();
+
+    const monday = wodMonday(today);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate()+6);
+
+    const from = wodDateISO(monday);
+    const to = wodDateISO(sunday);
+
+    const rows = await restGet(
+      `daily_wods?select=*&wod_date=gte.${from}&wod_date=lte.${to}&order=wod_date.asc`
+    );
+
+    const todayWod = (rows || []).find(w => w.wod_date === today);
+
+    if(todayWod){
+      todayBox.innerHTML = `
+        <h3>${wodEscape(todayWod.title)}</h3>
+        <div style="white-space:pre-wrap">${wodEscape(todayWod.workout)}</div>
+        ${todayWod.notes ? `<p class="muted">${wodEscape(todayWod.notes)}</p>` : ''}
+      `;
+    }else{
+      todayBox.innerHTML = 'Todavía no hay WOD publicado para hoy.';
+    }
+
+    if(!rows || !rows.length){
+      weekBox.innerHTML = '<div class="muted">Todavía no hay WOD publicados esta semana.</div>';
+      return;
+    }
+
+    weekBox.innerHTML = rows.map(w => `
+      <div class="mini" style="margin-bottom:10px">
+        <b>${wodEscape(w.wod_date)} · ${wodEscape(w.title)}</b>
+        <div style="white-space:pre-wrap;margin-top:6px">${wodEscape(w.workout)}</div>
+        ${w.notes ? `<div class="muted" style="margin-top:6px">${wodEscape(w.notes)}</div>` : ''}
+      </div>
+    `).join('');
+
+  }catch(e){
+    console.error(e);
+    todayBox.innerHTML = 'No se pudo cargar el WOD.';
+    weekBox.innerHTML = '';
+  }
+}
+
+document.querySelector('[data-s="wod"]')?.addEventListener('click', loadMemberWods);
 
 <style>
 .traincard{border:1px solid #25402d;border-radius:16px;padding:14px;margin:12px 0}
