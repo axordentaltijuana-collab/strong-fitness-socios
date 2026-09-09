@@ -477,14 +477,20 @@ async function loadMemberWods(){
       return;
     }
 
-    weekBox.innerHTML = rows.map(w => `
-      <div class="mini" style="margin-bottom:10px">
-        <b>${wodEscape(w.wod_date)} · ${wodEscape(w.title)}</b>
-        <div style="white-space:pre-wrap;margin-top:6px">${wodEscape(w.workout)}</div>
-        ${w.notes ? `<div class="muted" style="margin-top:6px">${wodEscape(w.notes)}</div>` : ''}
-      </div>
-    `).join('');
+   weekBox.innerHTML = rows.map(w => {
+  const fecha = new Date(w.wod_date + 'T12:00:00');
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const dia = dias[fecha.getDay()];
 
+  return `
+    <div class="mini" style="margin-bottom:10px">
+      <b>🔥 ${dia} · ${wodEscape(w.title)}</b>
+      <div class="muted" style="margin-top:3px">${wodEscape(w.wod_date)}</div>
+      <div style="white-space:pre-wrap;margin-top:6px">${wodEscape(w.workout)}</div>
+      ${w.notes ? `<div class="muted" style="margin-top:6px">${wodEscape(w.notes)}</div>` : ''}
+    </div>
+  `;
+}).join('');
   }catch(e){
     console.error(e);
     todayBox.innerHTML = 'No se pudo cargar el WOD.';
